@@ -8,6 +8,8 @@
       id: 0
       orient: [0,0,0]
       motion: [0,0,0]
+      posx: 0
+      posy: 0
       slider: 0
 
     orient_buf = []
@@ -32,19 +34,16 @@
 
     if (window.DeviceOrientationEvent)
       window.addEventListener( "deviceorientation", () ->
-        printReact "#orient-print", event.beta, event.gamma, event.alpha
         orient_buf.push [ event.beta, event.gamma, event.alpha ]
         has_cli = true
       , true )
     else
       window.addEventListener( "MozOrientation", () ->
-        printReact "#motion-print", orientation.x * 50, orientation.y * 50, orientation.z * 50
         orient_buf.push [ orientation.x * 50, orientation.y * 50, orientation.z * 50 ]
         has_cli = true
       , true )
     if (window.DeviceMotionEvent)
       window.addEventListener( "devicemotion", () ->
-        printReact "#motion-print", event.acceleration.x * 2, event.acceleration.y * 2, event.acceleration.z * 2
         motion_buf.push [ event.acceleration.x * 2, event.acceleration.y * 2, event.acceleration.z * 2 ]
         has_cli = true
       , true )
@@ -54,7 +53,24 @@
       has_cli = true
 
     $("#slider-1").val(70)
-    $("#slider-1").slider('refresh');
+    $("#slider-1").slider('refresh')
+
+    doc_width = $( document ).width()
+    doc_height = $( document ).height()
+    client_min = Math.min( doc_width, doc_height )
+    $( "#collorpick" ).width( client_min )
+    $( "#collorpick" ).height( client_min )
+
+    $( "#collorpick" ).on "vmousemove", (event) ->
+      size = $( "#collorpick" ).height()
+      x = event.pageX - this.offsetLeft
+      y = event.pageY - this.offsetTop
+      if( x > size || x < 0 || y > size || y < 0 )
+        return
+      cli.posx = 2 * ( x - size / 2.0 ) / size
+      cli.posy = 2 * ( y - size / 2.0 ) / size
+      console.log( cli.posx )
+      console.log( cli.posy )
 
     clidata = ->
       cli.orient = mean orient_buf
@@ -67,7 +83,4 @@
       if has_cli
         $.post '/paramdata', data: clidata()
         has_cli = false
-    , 10
-
-@printReact = ( id, x,y,z ) ->
-  $(id).html( "<p>" + x + "</p><p>" + y + "</p><p>" + z + "</p>" )
+    ,10
